@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-multipart
+pydantic
+passlib[bcrypt]
+python-jose[cryptography]
+python-dotenv
+pyjwt
+redis

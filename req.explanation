@@ -1,0 +1,15 @@
+FastAPI: A modern, fast (high-performance), web framework for building APIs with Python 3.7+ based on standard Python type hints.
+
+uvicorn: An ASGI server implementation for running FastAPI applications.
+
+python-multipart: A library for parsing multipart/form-data requests, which is used for file uploads and form submissions.
+
+pydantic: A data validation and settings management library that uses Python type hints.
+
+passlib: A manager library for password hashing and verification.
+
+bcrypt: password hashing engine.
+
+python-jose: A library for working with JSON Web Tokens (JWT), which is used for authentication and authorization.
+
+python-dotenv: A library for loading environment variables from a .env file.

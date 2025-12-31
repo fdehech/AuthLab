@@ -32,14 +32,13 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-TEST_USER = {
-    "sub": "test@test.com",
-    "password": "0000",
-    "role": "user"
-}
-
-
-
+def Auth(user, passw):
+    if user == "admin" and passw == "admin":
+        return "admin"
+    if user == "user" and passw == "user":
+        return "user"
+        
+    return False
 
 def create_access_token(sub: str, role: str):
     """Crafting Token using JWT"""
@@ -76,7 +75,7 @@ def Login(request: LoginRequest):
     sub = request.sub
     password = request.password
 
-    if sub != "test@test.com" or password != "0000":
+    if not Auth(sub, password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     token = create_access_token (sub=sub, role="user")
 

@@ -50,7 +50,6 @@ def require_role(required_role: str):
         return user
     return role_checker
 
-
 def check_login_rate_limit(ip: str):
     key = f"rl:login:{ip}"
     count = storage.incr(key)  # increments and returns new value

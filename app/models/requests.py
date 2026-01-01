@@ -10,7 +10,6 @@ class LogoutRequest(BaseModel):
 class RefreshRequest(BaseModel):
     refresh_token: str
 
-
 class RoleEnum(str, Enum):
     user = "user"
     admin = "admin"

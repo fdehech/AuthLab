@@ -20,16 +20,13 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return {"message": "User created successfully"}
 
-
 @router.post("/login")
 def login(request: LoginRequest, req: Request, db: Session = Depends(get_db)):
     """Login endpoint"""
-    sub = request.sub
-    password = request.password
     ip = req.client.host
     check_login_rate_limit(ip)
 
-    user = authenticate(db, sub, password)
+    user = authenticate(db, request.sub, request.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
@@ -37,6 +34,8 @@ def login(request: LoginRequest, req: Request, db: Session = Depends(get_db)):
     refresh = create_refresh_token()
 
     storage.set(f"refresh:{refresh}", user.sub, ex=TTL)
+    storage.sadd(f"user_sessions:{user.sub}", refresh)
+    storage.expire(f"user_sessions:{user.sub}", TTL)
 
     return {
         "token_type": "bearer",
@@ -46,8 +45,13 @@ def login(request: LoginRequest, req: Request, db: Session = Depends(get_db)):
 
 @router.post("/logout")
 def logout(request: LogoutRequest):
-    storage.delete(f"refresh:{request.refresh_token}")
+    key = f"refresh:{request.refresh_token}"
+    sub = storage.get(key)
+    storage.delete(key)
+    if sub:
+        storage.srem(f"user_sessions:{sub}", request.refresh_token)
     return {"message": "Logout successful"}
+
 
 @router.post("/refresh")
 def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
@@ -63,10 +67,15 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
-    storage.delete(key) # Invalidating the old refresh token to keep it Single Use
-    
+    # Invalidate old refresh token
+    storage.delete(key)
+    storage.srem(f"user_sessions:{sub}", request.refresh_token)
+
+    # Create and store new refresh token
     new_refresh_token = create_refresh_token()
     storage.set(f"refresh:{new_refresh_token}", sub, ex=TTL)
+    storage.sadd(f"user_sessions:{sub}", new_refresh_token)
+    storage.expire(f"user_sessions:{sub}", TTL)
 
     new_access_token = create_access_token(sub=sub, role=user.role)
     return {

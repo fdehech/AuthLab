@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      # Make your app use the Redis service in CI
+      REDIS_URL: redis://localhost:6379/0
+
+      # Provide required env vars for your app/tests
+      MASTER_SECRET: test_secret_key
+      ALGORITHM: HS256
+      ACCESS_TOKEN_MINUTES: "15"
+      REFRESH_TOKEN_DAYS: "7"
+      LOGIN_LIMIT: "5"
+      LOGIN_WINDOW_SECONDS: "60"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx ruff black
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Format check (black)
+        run: black --check .
+
+      - name: Run tests
+        run: pytest -q

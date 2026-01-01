@@ -9,3 +9,7 @@ python-dotenv
 pyjwt
 redis
 sqlalchemy
+pytest
+httpx
+ruff
+black

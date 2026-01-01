@@ -76,6 +76,11 @@ python main.py
 ```
 The API will be available at `http://localhost:8000`.
 
+### 6. Run Tests
+```bash
+python -m pytest
+```
+
 ## 📖 API Documentation
 
 Once the server is running, you can access the interactive API documentation:

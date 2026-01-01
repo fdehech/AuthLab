@@ -14,8 +14,9 @@ AuthLab is a high-performance, secure authentication microservice built with **F
 ## 🛠️ Tech Stack
 
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
+- **ORM**: [SQLAlchemy](https://www.sqlalchemy.org/)
 - **Security**: [python-jose](https://github.com/mpdavis/python-jose) (JWT), [Passlib](https://passlib.readthedocs.io/) (Bcrypt)
-- **Data Store**: [Redis](https://redis.io/)
+- **Data Store**: [Redis](https://redis.io/) & SQLite
 - **Server**: [Uvicorn](https://www.uvicorn.org/)
 - **Validation**: [Pydantic](https://docs.pydantic.dev/)
 
@@ -24,10 +25,14 @@ AuthLab is a high-performance, secure authentication microservice built with **F
 ```text
 AuthLab/
 ├── app/
+│   ├── models/          # Data Models
+│   │   ├── __init__.py  # Exports for easy access
+│   │   ├── requests.py  # Pydantic request/response models
+│   │   └── sql.py       # SQLAlchemy database models
 │   ├── routes/          # API Endpoints (auth, user)
 │   ├── auth.py          # Authentication logic & JWT utilities
 │   ├── config.py        # Configuration & Redis setup
-│   ├── models.py        # Pydantic request/response models
+│   ├── db.py            # Database connection & session
 │   └── __init__.py
 ├── main.py              # Application entry point
 ├── requirements.txt     # Project dependencies
@@ -76,6 +81,12 @@ The API will be available at `http://localhost:8000`.
 Once the server is running, you can access the interactive API documentation:
 - **Swagger UI**: `http://localhost:8000/docs`
 - **ReDoc**: `http://localhost:8000/redoc`
+
+### Key Endpoints:
+- `POST /register`: Create a new user account.
+- `POST /login`: Authenticate and receive JWT tokens.
+- `POST /refresh`: Rotate refresh tokens and get a new access token.
+- `POST /logout`: Invalidate a refresh token.
 
 ## 🔒 Security Implementation
 

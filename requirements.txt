@@ -7,3 +7,4 @@ python-jose[cryptography]
 python-dotenv
 pyjwt
 redis
+sqlalchemy

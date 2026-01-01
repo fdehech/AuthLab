@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from sqlalchemy.orm import Session
-from app.models import LoginRequest, LogoutRequest, RefreshRequest, RegisterRequest, User
-from app.auth import authenticate, create_access_token, create_refresh_token, check_login_rate_limit, get_password_hash
+from app.models import LoginRequest, LogoutRequest, RefreshRequest, RegisterRequest, User, ChangePasswordRequest
+from app.auth import authenticate, create_access_token, create_refresh_token, check_login_rate_limit, get_password_hash, get_current_user, verify_password, revoke_all_sessions
 from app.config import storage, TTL
 from app.db import get_db
 
@@ -52,7 +52,6 @@ def logout(request: LogoutRequest):
         storage.srem(f"user_sessions:{sub}", request.refresh_token)
     return {"message": "Logout successful"}
 
-
 @router.post("/refresh")
 def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
     """ Refresh endpoint with Token Rotation """
@@ -83,3 +82,24 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
         "access_token": new_access_token,
         "refresh_token": new_refresh_token
     }
+
+@router.post("/change-password")
+def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """Change password endpoint"""
+
+    sub = user["sub"]
+
+    db_user = db.query(User).filter(User.sub == sub).first()
+
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(request.current_password, db_user.hashed_password):
+        raise HTTPException(status_code=401, detail="Wrong current password")
+
+    db_user.hashed_password = get_password_hash(request.new_password)
+    db.commit()
+
+    revoke_all_sessions(sub)
+
+    return {"message": "Password updated. Logged out from all sessions."}

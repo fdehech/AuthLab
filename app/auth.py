@@ -62,3 +62,18 @@ def check_login_rate_limit(ip: str):
             status_code=429,
             detail=f"Too many login attempts. Try again in {ttl}s"
         )
+
+def revoke_all_sessions(email: str):
+    key = f"user_sessions:{email}"
+    tokens = storage.smembers(key)  # set of refresh tokens
+
+    if tokens:
+        # delete refresh:<token> keys
+        storage.delete(*[f"refresh:{t}" for t in tokens])
+
+    # delete the set itself
+    storage.delete(key)
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+

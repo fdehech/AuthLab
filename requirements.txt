@@ -2,7 +2,8 @@ fastapi
 uvicorn
 python-multipart
 pydantic
-passlib[bcrypt]
+passlib
+bcrypt==4.3.0
 python-jose[cryptography]
 python-dotenv
 pyjwt

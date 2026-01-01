@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from sqlalchemy.orm import Session
-from app.models import LoginRequest, LogoutRequest, RefreshRequest, User
+from app.models import LoginRequest, LogoutRequest, RefreshRequest, RegisterRequest, User
 from app.auth import authenticate, create_access_token, create_refresh_token, check_login_rate_limit, get_password_hash
 from app.config import storage, TTL
 from app.db import get_db
@@ -8,18 +8,18 @@ from app.db import get_db
 router = APIRouter()
 
 @router.post("/register")
-def register(request: LoginRequest, db: Session = Depends(get_db)):
-    """User registration endpoint"""
-    existing_user = db.query(User).filter(User.email == request.sub).first()
+def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.sub == request.sub).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
+        raise HTTPException(status_code=400, detail="User/Email already registered")
+
     hashed_password = get_password_hash(request.password)
-    new_user = User(email=request.sub, hashed_password=hashed_password, role="user")
+    new_user = User(sub=request.sub, hashed_password=hashed_password, role=request.role)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     return {"message": "User created successfully"}
+
 
 @router.post("/login")
 def login(request: LoginRequest, req: Request, db: Session = Depends(get_db)):
@@ -33,10 +33,10 @@ def login(request: LoginRequest, req: Request, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    token = create_access_token(sub=user.email, role=user.role)
+    token = create_access_token(sub=user.sub, role=user.role)
     refresh = create_refresh_token()
 
-    storage.set(f"refresh:{refresh}", user.email, ex=TTL)
+    storage.set(f"refresh:{refresh}", user.sub, ex=TTL)
 
     return {
         "token_type": "bearer",
@@ -59,7 +59,7 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     
     # Fetch user to get current role
-    user = db.query(User).filter(User.email == sub).first()
+    user = db.query(User).filter(User.sub == sub).first()
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
